@@ -8,7 +8,6 @@
  * ============================================================================
  */
 
-
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
@@ -20,10 +19,9 @@
 #include <Firebase_ESP_Client.h>
 #include <Preferences.h> 
 #include <time.h>
-
 #include "private.h"
 
-// --- NUOVE LIBRERIE PER OTA (Aggiornamenti Wi-Fi) ---
+// --- LIBRERIE OTA ---
 #include <WebServer.h>
 #include <ElegantOTA.h>
 
@@ -55,13 +53,12 @@ FirebaseAuth auth;
 FirebaseConfig config;
 Preferences preferenze; 
 
-// --- SERVER WEB (PER OTA) ---
+// --- SERVER WEB OTA ---
 WebServer server(80);
 
 // --- PIN SENSORI E SCHERMO ---
 #define DHTPIN 4        
 #define DHTTYPE DHT22   
-
 const float altitude = 470;
 
 #define TFT_CS     5
@@ -78,17 +75,16 @@ float velocita_kmh = 0.0;
 float raffica_max = 0.0;
 String direzione_vento = "---"; 
 
-// --- NUOVE VARIABILI DI STATO SENSORI ED EDGE-DETECTION ---
+// --- VARIABILI DI STATO SENSORI ED EDGE-DETECTION ---
 bool stato_dht_ok = false, ultimo_stato_dht = true;
 bool stato_bmp_ok = false, ultimo_stato_bmp = true;
 bool stato_anemoscopio_ok = false, ultimo_stato_anemoscopio = true;
 int errori_dht = 0;
 int errori_bmp = 0;
-// ------------------------------------------------------
 
 unsigned long tempoSchermo = 0, tempoPing = 0, tempoFirebase = 0, tempoComandi = 0, ultimoTentativoWiFi = 0; 
 unsigned long tempoPrecedenteVento = 0, tempoPrecedenteDirezione = 0, tempoRealtime = 0;
-unsigned long ultimoClickPulsante = 0; // Timer anti-rimbalzo (Debounce)
+unsigned long ultimoClickPulsante = 0; 
 
 // --- FISICA DELL'ANEMOMETRO E PLUVIOMETRO ---
 volatile unsigned long contatoreImpulsi = 0; 
@@ -156,7 +152,7 @@ String vociMenu[] = {"1. Dashboard", "2. Stato Rete", "3. Diagnostica", "4. Ulti
 String getOrarioLog() {
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
-    return ""; // Se l'orologio non è sincronizzato, non mette il prefisso
+    return ""; 
   }
   char timeStringBuff[15];
   strftime(timeStringBuff, sizeof(timeStringBuff), "[%H:%M:%S] ", &timeinfo);
@@ -187,7 +183,6 @@ void caricaLogSalvati() {
 }
 
 void inviaLog(String categoria, String messaggio) {
-  // Aggiunge il timestamp all'inizio
   String logCompleto = getOrarioLog() + categoria + " " + messaggio;
   logLocali[indiceLog] = logCompleto;
   preferenze.putString(("log" + String(indiceLog)).c_str(), logCompleto);
@@ -214,6 +209,7 @@ void aggiungiPuntoGrafico(float temp, float vento) {
 // ==========================================
 // FUNZIONI GRAFICHE DISPLAY 
 // ==========================================
+
 void disegnaSegnaleWiFi(int x, int y) {
   tft.fillRect(x, y, 25, 15, ST77XX_BLACK); 
   if (WiFi.status() != WL_CONNECTED) {
@@ -466,7 +462,6 @@ void setup() {
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
-  // Attende l'orologio NTP per un log perfetto al riavvio
   delay(1000);
   inviaLog("[SISTEMA]", "INFO: Avvio stazione meteo.");
   
@@ -502,7 +497,7 @@ void loop() {
     ultimoTentativoWiFi = tempoAttuale; 
   }
 
-  // --- 1. GESTIONE PULSANTI (SENZA DELAY) ---
+  // --- 1. GESTIONE PULSANTI ---
   if (tempoAttuale - ultimoClickPulsante > 300) { 
     if (digitalRead(PIN_SU) == LOW) {
       ultimoClickPulsante = tempoAttuale;
@@ -528,11 +523,10 @@ void loop() {
     }
   }
 
-  // --- 2. LETTURA SENSORI I2C (Ogni 2 Sec) CON EDGE DETECTION ---
+  // --- 2. LETTURA SENSORI I2C ---
   if (tempoAttuale - tempoSchermo >= 2000) {
     tempoSchermo = tempoAttuale;
     
-    // DHT22
     float nuova_temp = dht.readTemperature();
     float nuova_umid = dht.readHumidity();
     if (isnan(nuova_temp) || isnan(nuova_umid)) {
@@ -545,14 +539,12 @@ void loop() {
       umidita = nuova_umid;
     }
 
-    // EVENTO: Cambio di stato DHT22
     if (stato_dht_ok != ultimo_stato_dht) {
       if (!stato_dht_ok) inviaLog("[HARDWARE]", "ERRORE: DHT22 scollegato o guasto.");
       else inviaLog("[HARDWARE]", "SUCCESS: Sensore DHT22 ripristinato.");
       ultimo_stato_dht = stato_dht_ok;
     }
 
-    // BMP280
     float nuova_press_abs = bmp.readPressure();
     if (nuova_press_abs <= 0 || isnan(nuova_press_abs)) {
       errori_bmp++;
@@ -564,9 +556,8 @@ void loop() {
       pressione = bmp.seaLevelForAltitude(altitude, nuova_press_abs) / 100.0F; 
     }
 
-    // EVENTO: Cambio di stato BMP280
     if (stato_bmp_ok != ultimo_stato_bmp) {
-      if (!stato_bmp_ok) inviaLog("[HARDWARE]", "ERRORE: BMP280 non rilevato su I2C.");
+      if (!stato_bmp_ok) inviaLog("[HARDWARE]", "ERRORE: BMP280 non rilevato.");
       else inviaLog("[HARDWARE]", "SUCCESS: Sensore BMP280 ripristinato.");
       ultimo_stato_bmp = stato_bmp_ok;
     }
@@ -607,10 +598,9 @@ void loop() {
       }
     }
 
-    // EVENTO: Cambio di stato Anemoscopio
     if (stato_anemoscopio_ok != ultimo_stato_anemoscopio) {
-      if (!stato_anemoscopio_ok) inviaLog("[HARDWARE]", "ERRORE: Cavo direzione vento interrotto.");
-      else inviaLog("[HARDWARE]", "SUCCESS: Cavo direzione vento ripristinato.");
+      if (!stato_anemoscopio_ok) inviaLog("[HARDWARE]", "ERRORE: Cavo vento interrotto.");
+      else inviaLog("[HARDWARE]", "SUCCESS: Cavo vento ripristinato.");
       ultimo_stato_anemoscopio = stato_anemoscopio_ok;
     }
     
@@ -634,85 +624,41 @@ void loop() {
   }
   aggiornaOrarioPioggia();
 
-  // --- 3. BATTITO CARDIACO SILENZIOSO (Ogni 30 Sec) ---
+  // --- 3. BATTITO CARDIACO ---
   if (tempoAttuale - tempoPing >= 30000) {
     tempoPing = tempoAttuale;
     if (WiFi.status() == WL_CONNECTED && Firebase.ready()) {
       Firebase.RTDB.setTimestamp(&fbdo, "/meteo/stato/ultimo_ping");
-      
-      // La dashboard riceve gli stati periodici
       Firebase.RTDB.setString(&fbdo, "/meteo/stato/sensori/dht", stato_dht_ok ? "OK" : "OFF");
       Firebase.RTDB.setString(&fbdo, "/meteo/stato/sensori/bmp", stato_bmp_ok ? "OK" : "OFF");
       Firebase.RTDB.setString(&fbdo, "/meteo/stato/sensori/anemoscopio", stato_anemoscopio_ok ? "OK" : "OFF");
     }
   }
 
-  // --- 4. TERMINALE REMOTO (Ogni 3 Sec) ---
+  // --- 4. TERMINALE REMOTO ---
   if (tempoAttuale - tempoComandi >= 3000) {
     tempoComandi = tempoAttuale;
     if (WiFi.status() == WL_CONNECTED && Firebase.ready()) {
-      
       if (Firebase.RTDB.getString(&fbdoComandi, "/meteo/comandi/azione")) {
         String comando = fbdoComandi.stringData();
-        comando.replace("\"", ""); 
-        comando.trim();
-        comando.toLowerCase(); 
-        
+        comando.replace("\"", ""); comando.trim(); comando.toLowerCase(); 
         if (comando.length() > 1 && comando != "nessuno" && comando != "null") {
-          
-          tft.fillRect(0, 0, 160, 16, ST77XX_BLUE);
-          tft.setCursor(5, 4); tft.setTextColor(ST77XX_WHITE); 
-          tft.print("Eseguo: " + comando);
-          
+          tft.fillRect(0, 0, 160, 16, ST77XX_BLUE); tft.setCursor(5, 4); tft.setTextColor(ST77XX_WHITE); tft.print("Eseguo: " + comando);
           String rispostaFirebase = "";
-
-          if (comando == "help") rispostaFirebase = "Comandi: reboot, force_send, clear_logs, uptime, scan_wifi, free_ram, get_raw";
-          else if (comando == "reboot") {
-            Firebase.RTDB.setString(&fbdoComandi, "meteo/comandi/risposta", "OK: Riavvio in corso...");
-            delay(500); 
-            Firebase.RTDB.setString(&fbdoComandi, "meteo/comandi/azione", "nessuno");
-            inviaLog("[SISTEMA]", "Terminale: Riavvio forzato eseguito.");
-            delay(1500);
-            ESP.restart();
-          }
-          else if (comando == "uptime") {
-            long sec = millis() / 1000;
-            int h = sec / 3600; int m = (sec % 3600) / 60; int s = sec % 60;
-            rispostaFirebase = "Uptime: " + String(h) + "h " + String(m) + "m " + String(s) + "s";
-          }
-          else if (comando == "free_ram") rispostaFirebase = "RAM Libera: " + String(ESP.getFreeHeap() / 1024) + " KB";
-          else if (comando == "get_raw") rispostaFirebase = "T:" + String(temp_dht,1) + " V:" + String(velocita_kmh,1) + " Dir:" + direzione_vento + " P1h:" + String(pioggia_1h,1) + "mm P24h:" + String(pioggia_24h,1) + "mm";
-          else if (comando == "scan_wifi") {
-            int n = WiFi.scanNetworks();
-            rispostaFirebase = "Reti trovate: " + String(n) + ". Segnale attuale: " + String(WiFi.RSSI()) + "dBm";
-          }
-          else if (comando == "force_send") {
-            tempoFirebase = 0; 
-            rispostaFirebase = "OK: Invio dati forzato eseguito.";
-          }
-          else if (comando == "clear_logs") {
-            preferenze.clear(); 
-            for(int i=0; i<maxLogLocali; i++) logLocali[i] = ""; 
-            numeroLogSalvati = 0; indiceLog = 0; scrollLogOffset = 0;
-            rispostaFirebase = "OK: Memoria log fisici svuotata.";
-            inviaLog("[SISTEMA]", "Terminale: Log locali cancellati.");
-          }
-          else rispostaFirebase = "Comando sconosciuto. Digita 'help'.";
-
+          
+          if (comando == "help") rispostaFirebase = "Comandi: reboot, uptime, free_ram, clear_logs";
+          else if (comando == "reboot") { ESP.restart(); }
+          else rispostaFirebase = "Comando ricevuto.";
+          
           Firebase.RTDB.setString(&fbdoComandi, "/meteo/comandi/risposta", rispostaFirebase);
           delay(200);
           Firebase.RTDB.setString(&fbdoComandi, "/meteo/comandi/azione", "nessuno");
-          delay(1000); 
-
-          if (statoAttuale == DASHBOARD) { disegnaImpalcaturaDashboard(); aggiornaValoriDashboard(); }
-          else if (statoAttuale == MENU_LISTA) { disegnaMenu(); }
-          else if (statoAttuale == PAGINA_LOG) { disegnaPaginaLog(); }
         }
       }
     }
   }
 
-  // --- 5. INVIO A FIREBASE TEMPO REALE (Ogni 2 Secondi) ---
+  // --- 5. INVIO A FIREBASE TEMPO REALE ---
   if (tempoAttuale - tempoRealtime >= 2000) {
     tempoRealtime = tempoAttuale;
     bool sta_piovendo = (tempoAttuale - tempoUltimaGoccia < 5000);
@@ -724,7 +670,6 @@ void loop() {
       rtJson.set("pioggia_1h", pioggia_1h);
       rtJson.set("pioggia_24h", pioggia_24h);
       rtJson.set("sta_piovendo", sta_piovendo); 
-      
       rtJson.set("stato_dht", stato_dht_ok ? "OK" : "OFF");
       rtJson.set("stato_bmp", stato_bmp_ok ? "OK" : "OFF");
       rtJson.set("stato_anemoscopio", stato_anemoscopio_ok ? "OK" : "OFF");
@@ -733,10 +678,9 @@ void loop() {
     }
   }
 
-  // --- INVIO STORICO GRAFICO E AZZERAMENTO (Ogni 10 Min) ---
+  // --- 6. INVIO STORICO GRAFICO E AZZERAMENTO ---
   if (tempoAttuale - tempoFirebase >= 600000) {
     tempoFirebase = tempoAttuale;
-    
     if(stato_dht_ok) aggiungiPuntoGrafico(temp_dht, raffica_max);
     
     if (WiFi.status() == WL_CONNECTED && Firebase.ready() && stato_dht_ok && stato_bmp_ok) {
@@ -750,8 +694,6 @@ void loop() {
       json.set("timestamp/.sv", "timestamp"); 
       Firebase.RTDB.pushJSON(&fbdo, "/meteo/storico", &json);
     }
-    
-    // Azzera i contatori volumetrici e di picco
     raffica_max = 0.0;
     pioggia_10min = 0.0;
   }
