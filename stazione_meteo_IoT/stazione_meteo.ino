@@ -1,8 +1,8 @@
 /**
  * ============================================================================
- * PROGETTO: Stazione Meteo IoT PRO - ESP32
+ * PROGETTO: Stazione Meteo IoT - ESP32
  * AUTORE:   Andrea Leone
- * VERSIONE: 2.0 (Fault-Tolerant Edge Edition)
+ * VERSIONE: 1.0 (Fault-Tolerant Edge Edition)
  * LICENZA:  Copyright (c) Andrea Leone. Tutti i diritti riservati.
  * È vietata la copia, modifica o distribuzione non autorizzata.
  * ============================================================================
