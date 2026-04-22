@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * PROGETTO: Stazione Meteo IoT PRO - ESP32
+ * AUTORE:   Andrea Leone
+ * VERSIONE: 2.0 (Fault-Tolerant Edge Edition)
+ * LICENZA:  Copyright (c) Andrea Leone. Tutti i diritti riservati.
+ * È vietata la copia, modifica o distribuzione non autorizzata.
+ * ============================================================================
+ */
+
+
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
