@@ -1,4 +1,4 @@
-# Stazione-Meteo-ESP32
+# Stazione Meteo IoT - ESP32
 Firmware Fault-Tolerant per Stazione Meteo IoT con ESP32 e Firebase.
 
 [![Language](https://img.shields.io/badge/Language-C++-blue.svg)](https://isocpp.org/)
