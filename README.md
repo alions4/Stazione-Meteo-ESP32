@@ -58,7 +58,7 @@ Poiché il codice utilizza crittografia SSL per Firebase e un WebServer per l'OT
 ## 🇬🇧 English Version
 
 ### 📖 What is this project?
-**Meteo IoT PRO** is a commercial-grade firmware for a weather station based on the **ESP32** microcontroller. This is not a simple prototype: the code has been engineered to be **Fault-Tolerant** and operate 24/7 outdoors without freezing.
+**Meteo IoT** is a firmware for a weather station based on the **ESP32** microcontroller. This is not a simple prototype: the code has been engineered to be **Fault-Tolerant** and operate 24/7 outdoors without freezing.
 
 It collects environmental data and transmits it to the cloud (Google Firebase) using a hybrid architecture, ensuring real-time updates for web dashboards and a clean, efficient historical database.
 
