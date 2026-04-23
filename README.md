@@ -3,7 +3,7 @@ Firmware Fault-Tolerant per Stazione Meteo IoT con ESP32 e Firebase.
 
 [![Language](https://img.shields.io/badge/Language-C++-blue.svg)](https://isocpp.org/)
 [![Platform](https://img.shields.io/badge/Platform-ESP32-green.svg)](https://www.espressif.com/en/products/socs/esp32)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 *(🇬🇧 Scroll down for the English version)*
 
